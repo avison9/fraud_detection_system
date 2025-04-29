@@ -35,7 +35,7 @@ def generate_initial_transactions(n_wallets=100, txns_per_wallet=random.randint(
         for _ in range(txns_per_wallet):
             trxn = {
                 "transaction_id": str(uuid.uuid4()),
-                "timestamp": pd.Timestamp.now(),
+                "timestamp": generate_random_timestamp("2022-01-01 00:00:00", "2025-01-01 00:00:00"),
                 "sender_wallet": wallet_id,
                 "receiver_wallet": str(uuid.uuid4()),
                 "amount": round(random.uniform(0.0001, 10.0), 6),
