@@ -27,8 +27,6 @@ jobs:
           --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
           --env KAFKA_BROKER_ID=1
           --env KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-          --env KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker2:9092
-          --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
 
       broker2:
         image: wurstmeister/kafka:latest
@@ -42,8 +40,6 @@ jobs:
           --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
           --env KAFKA_BROKER_ID=2
           --env KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093
-          --env KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker2:9093
-          --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
 
       broker3:
         image: wurstmeister/kafka:latest
@@ -57,49 +53,48 @@ jobs:
           --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
           --env KAFKA_BROKER_ID=3
           --env KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094
-          --env KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker3:9094
-          --env KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
 
       mongo:
         image: mongo:latest
         ports:
           - 27017:27017
-        environment:
-          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_USER }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+        options: >-
+          --env MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
+          --env MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
 
       postgres:
         image: postgres:latest
         ports:
           - 5432:5432
-        environment:
+        options: >-
+          --env POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          --env POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          --env POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run health check tests
+        run: |
+          python -m unittest discover -s test -p 'test_*.py'
+        env:
+          MONGO_USER: ${{ secrets.MONGO_USER }}
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          KAFKA_BROKER1: ${{ secrets.KAFKA_BROKER1 }}
+          KAFKA_BROKER2: ${{ secrets.KAFKA_BROKER2 }}
+          KAFKA_BROKER3: ${{ secrets.KAFKA_BROKER3 }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
 
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run health check tests
-      run: |
-        python -m unittest discover
-      env:
-        MONGO_USER: ${{ secrets.MONGO_USER }}
-        MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-        KAFKA_BROKER1: ${{ secrets.KAFKA_BROKER1 }}
-        KAFKA_BROKER2: ${{ secrets.KAFKA_BROKER2 }}
-        KAFKA_BROKER3: ${{ secrets.KAFKA_BROKER3 }}
-        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
