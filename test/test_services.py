@@ -1,26 +1,27 @@
 import unittest
-from kafka import KafkaProducer, KafkaConsumer, KafkaError
+from kafka import KafkaProducer, KafkaConsumer
+from kafka.errors import KafkaError
 from pymongo import MongoClient, errors as mongo_errors
 import psycopg2
 from psycopg2 import OperationalError
 import os
 
-broker1 = os.getenv('KAFKA_BROKER1')
-broker2 = os.getenv('KAFKA_BROKER2')
-broker3 = os.getenv('KAFKA_BROKER3')
+broker1 = 'localhost:9092'
+broker2 = 'localhost:9093'
+broker3 = 'localhost:9094'
 
-mongo_host = os.getenv('MONGO_HOST')
-mongo_port = os.getenv('MONGO_PORT')
-mongo_password = os.getenv('MONGO_PASSWORD')
-mongo_user = os.getenv('MONGO_USER')
-mongo_db_name = os.getenv('MONGO_DB_NAME')
-mongo_collection_name = os.getenv('MONGO_COLLECTION_NAME')
+mongo_host = 'localhost'
+mongo_port = '27017'
+mongo_password = 'password'
+mongo_user = 'root'
+mongo_db_name = 'transactions'
+mongo_collection_name = 'raw_trx'
 
-postgres_db = os.getenv('POSTGRES_DB_NAME')
-postgres_user = os.getenv('POSTGRES_USER')
-postgres_password = os.getenv('POSTGRES_PASSWORD')
-postgres_host = os.getenv('POSTGRES_HOST')
-postgres_port = os.getenv('POSTGRES_PORT')
+postgres_db = 'dev'
+postgres_user = 'root'
+postgres_password = 'password'
+postgres_host = 'localhost'
+postgres_port = '5432'
 
 class ServiceHealthCheckTest(unittest.TestCase):
 
@@ -35,7 +36,7 @@ class ServiceHealthCheckTest(unittest.TestCase):
     def test_kafka_consumer_connection(self):
         try:
             consumer = KafkaConsumer(
-                'trx',
+                'transaction',
                 bootstrap_servers=[broker1,broker2,broker3],
                 auto_offset_reset='earliest',
                 group_id='healthcheck_group',

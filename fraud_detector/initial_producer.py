@@ -6,9 +6,9 @@ import time
 from datetime import datetime, timedelta
 import os
 
-broker1 = os.getenv('KAFKA_BROKER1')
-broker2 = os.getenv('KAFKA_BROKER2')
-broker3 = os.getenv('KAFKA_BROKER3')
+broker1 = 'localhost:9092'
+broker2 = 'localhost:9093'
+broker3 = 'localhost:9094'
 
 KAFKA_TOPIC = "transactions"
 KAFKA_BROKER = [broker1,broker2,broker3]
