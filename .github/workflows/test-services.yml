@@ -59,17 +59,17 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --env MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
-          --env MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+          --env MONGO_INITDB_ROOT_USERNAME=root
+          --env MONGO_INITDB_ROOT_PASSWORD=password
 
       postgres:
         image: postgres:latest
         ports:
           - 5432:5432
         options: >-
-          --env POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          --env POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          --env POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          --env POSTGRES_USER=root
+          --env POSTGRES_PASSWORD=password
+          --env POSTGRES_DB=dev
 
     steps:
       - name: Check out code
