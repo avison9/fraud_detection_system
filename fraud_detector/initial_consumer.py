@@ -5,16 +5,16 @@ from pymongo import MongoClient
 from datetime import datetime
 
 
-mongo_host = os.getenv('MONGO_HOST')
-mongo_port = os.getenv('MONGO_PORT')
-mongo_password = os.getenv('MONGO_PASSWORD')
-mongo_user = os.getenv('MONGO_USER')
-mongo_db_name = os.getenv('MONGO_DB_NAME')
-mongo_collection_name = os.getenv('MONGO_COLLECTION_NAME')
+mongo_host = 'localhost'
+mongo_port = '27017'
+mongo_password = 'password'
+mongo_user = 'root'
+mongo_db_name = 'transactions'
+mongo_collection_name = 'raw_trx'
 
-broker1 = os.getenv('KAFKA_BROKER1')
-broker2 = os.getenv('KAFKA_BROKER2')
-broker3 = os.getenv('KAFKA_BROKER3')
+broker1 = 'localhost:9092'
+broker2 = 'localhost:9093'
+broker3 = 'localhost:9093'
 
 
 kafka_brokers = [broker1,broker2,broker3]

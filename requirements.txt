@@ -1,0 +1,9 @@
+pandas
+numpy
+xgboost
+scikit-learn
+imblearn
+tensorflow
+kafka-python
+pymongo
+psycopg2-binary
