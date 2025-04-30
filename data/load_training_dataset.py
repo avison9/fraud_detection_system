@@ -1,0 +1,45 @@
+import pandas as pd
+from pymongo import MongoClient
+from datetime import datetime
+import os
+
+mongo_host = "localhost"
+mongo_port = 27017
+mongo_password = "password"
+mongo_user = "root"
+mongo_db_name = "transactions"
+mongo_collection_name = "raw_trx"
+
+mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
+
+chunk_size = 500
+skip_file = "data/skip_offset.txt"
+
+if os.path.exists(skip_file):
+    with open(skip_file, "r") as f:
+        skip = int(f.read().strip())
+else:
+    skip = 0
+
+client = MongoClient(mongo_uri)
+db = client[mongo_db_name]
+collection = db[mongo_collection_name]
+
+data = list(collection.find().skip(skip).limit(chunk_size))
+
+if data:
+    for item in data:
+        item.pop('_id', None)
+
+    df = pd.DataFrame(data)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    df.to_csv(f"data/mongo_export_{timestamp}.csv", index=False)
+
+    skip += chunk_size
+    with open(skip_file, "w") as f:
+        f.write(str(skip))
+
+    print(f"[{timestamp}] Fetched and saved {len(df)} training data.")
+else:
+    print(f"[{datetime.now()}] No more data to fetch.")
