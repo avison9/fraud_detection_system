@@ -1,31 +1,26 @@
 import json
-import os
 from kafka import KafkaConsumer
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 
+# MongoDB connection details
+mongo_host = "mongodb"
+mongo_port = 27017
+mongo_password = "password"
+mongo_user = "root"
+mongo_db_name = "transactions"
+mongo_collection_name = "raw_trx"
 
-mongo_host = 'localhost'
-mongo_port = '27017'
-mongo_password = 'password'
-mongo_user = 'root'
-mongo_db_name = 'transactions'
-mongo_collection_name = 'raw_trx'
+# Kafka Consumer Configuration
+kafka_brokers = ['broker1:29092', 'broker2:29093', 'broker3:29094']
+kafka_topic = 'training_transactions'
 
-broker1 = 'localhost:9092'
-broker2 = 'localhost:9093'
-broker3 = 'localhost:9093'
-
-
-kafka_brokers = [broker1,broker2,broker3]
-kafka_topic = 'transactions'
-
+# Connect to MongoDB (with f-string fix)
 client = MongoClient(f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/")
 db = client[mongo_db_name]
 collection = db[mongo_collection_name]
 
 print("Connected to MongoDB")
-
 
 consumer = KafkaConsumer(
     kafka_topic,
