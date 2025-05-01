@@ -7,3 +7,7 @@ tensorflow
 kafka-python
 pymongo
 psycopg2-binary
+schedule
+ecdsa
+base58
+

@@ -27,6 +27,7 @@ services:
       - ./broker1_data:/var/lib/kafka/data
     depends_on:
       - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -47,6 +48,7 @@ services:
       - ./broker2_data:/var/lib/kafka/data
     depends_on:
       - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -67,6 +69,7 @@ services:
       - ./broker3_data:/var/lib/kafka/data
     depends_on:
       - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -86,7 +89,7 @@ services:
     depends_on:
       - broker1
     environment:
-      KAFKA_BROKERCONNECT: 'localhost:9092','localhost:9093','localhost:9094'
+      KAFKA_BROKERCONNECT: broker1:29092,broker2:29093,broker3:29094
       JVM_OPTS: "-Xms32M -Xmx64M"
 
   mongodb:
@@ -97,8 +100,8 @@ services:
     networks:
       - kafka-net
     environment:
-      MONGO_INITDB_ROOT_USERNAME: 'root'
-      MONGO_INITDB_ROOT_PASSWORD: 'password'
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
 
   postgres:
     image: postgres:15
@@ -108,6 +111,21 @@ services:
     networks:
       - kafka-net
     environment:
-      POSTGRES_USER: 'root'
-      POSTGRES_PASSWORD: 'password'
-      POSTGRES_DB: 'dev'
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev1
+  
+  fraud_detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraud_detector
+    networks:
+      - kafka-net
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+      - mongodb
+
+
