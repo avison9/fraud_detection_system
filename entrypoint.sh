@@ -13,10 +13,10 @@ source /app/venv/bin/activate
 sleep 70
 
 echo "Running producer script..."
-python data/producer.py 
+python data/initial_producer.py 
 
 echo "Running consumer script..."
-python data/consumer.py
+python data/initial_consumer.py
 
 
 echo "Running fraud detection script..."
