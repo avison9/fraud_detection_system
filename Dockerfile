@@ -1,18 +1,35 @@
-# Use a Python 3 base image
 FROM python:3.9-slim
 
-# Set working directory
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y \
+    gcc g++ libglib2.0-0 libsm6 libxext6 libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Install dependencies
+RUN python -m pip install --upgrade pip && pip install virtualenv
+
+RUN python -m venv /app/venv
+
+# Install Python dependencies
 COPY requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
 
-# Copy the entire app
-COPY . /app
+RUN /app/venv/bin/python -m pip install --upgrade pip && /app/venv/bin/pip install -r /app/requirements.txt
 
-# Expose the port if needed (optional)
-EXPOSE 5000
+RUN /app/venv/bin/pip list
 
-# Set the default command to run the consumer
-CMD ["python", "fraud_detector_consumer.py"]
+# Copy all required project directories
+COPY fraud_detector/ ./fraud_detector/
+
+COPY data/ ./data/
+
+COPY entrypoint.sh/ ./entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
+
+ENV PYTHONPATH="/app"
+
+
+CMD ["/app/entrypoint.sh"]
