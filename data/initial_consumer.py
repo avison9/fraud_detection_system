@@ -1,7 +1,7 @@
 import json
 from kafka import KafkaConsumer
-from pymongo import MongoClient
 from datetime import datetime, timedelta
+from database.db_connection import DatabaseConnection
 
 # MongoDB connection details
 mongo_host = "mongodb"
@@ -15,10 +15,12 @@ mongo_collection_name = "raw_trx"
 kafka_brokers = ['broker1:29092', 'broker2:29093', 'broker3:29094']
 kafka_topic = 'training_transactions'
 
-# Connect to MongoDB (with f-string fix)
-client = MongoClient(f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/")
-db = client[mongo_db_name]
-collection = db[mongo_collection_name]
+MONGO_URI = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
+
+
+db = DatabaseConnection(None,MONGO_URI, mongo_db_name)
+
+db.connect_mongo()
 
 print("Connected to MongoDB")
 
@@ -32,7 +34,7 @@ consumer = KafkaConsumer(
 
 print(f"Connected to Kafka's {len(kafka_brokers)} brokers")
 
-INACTIVITY_TIMEOUT_SECONDS = 60 
+INACTIVITY_TIMEOUT_SECONDS = 30 
 last_message_time = datetime.now()
 
 def process_and_insert_data(message):
@@ -54,8 +56,7 @@ def process_and_insert_data(message):
             'is_fraud': data['is_fraud']
         }
 
-        collection.insert_one(document)
-        print(f"Inserted transaction with ID: {data['transaction_id']} into MongoDB")
+        db.insert_mongo(mongo_collection_name,document, True)
         last_message_time = datetime.now()
     
     except Exception as e:
