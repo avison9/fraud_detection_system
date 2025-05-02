@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pickle
 import uuid
 import xgboost as xgb
@@ -8,8 +9,13 @@ import numpy as np
 import pandas as pd
 import random
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from imblearn.over_sampling import SMOTE
+import warnings
+
+warnings.filterwarnings('always', category=UserWarning, message=".*compiled the loaded model.*")
+
 
 class FraudDetector:
     def __init__(self, model_dir="models"):
@@ -19,8 +25,10 @@ class FraudDetector:
         self.feature_cols = []
         self.model_dir = model_dir
 
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
+        base_dir = Path(__file__).resolve().parent
+        self.model_dir = base_dir / model_dir
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+
 
     def preprocess_data(self, df):
         df = df.drop(columns=['transaction_id', 'timestamp'], errors='ignore')
@@ -60,20 +68,16 @@ class FraudDetector:
         return model
 
     def save_model(self, version):
-        # Create a folder for the model version
         model_folder = os.path.join(self.model_dir, f"FraudDetectorModels_v{version}")
         os.makedirs(model_folder, exist_ok=True)
 
-        # Save XGBoost model
         xgb_model_path = os.path.join(model_folder, "xgb_model.pkl")
         with open(xgb_model_path, 'wb') as f:
             pickle.dump(self.xgb_model, f)
 
-        # Save LSTM model
         lstm_model_path = os.path.join(model_folder, "lstm_model.h5")
         self.lstm_model.save(lstm_model_path)
 
-        # Save Scaler
         scaler_path = os.path.join(model_folder, "scaler.pkl")
         with open(scaler_path, 'wb') as f:
             pickle.dump(self.scaler, f)
@@ -98,7 +102,6 @@ class FraudDetector:
         self.save_model(version)
 
     def load_model(self, version):
-        # Load the models from the specified version folder
         model_folder = os.path.join(self.model_dir, f"FraudDetectorModels_v{version}")
 
         xgb_model_path = os.path.join(model_folder, "xgb_model.pkl")
@@ -121,8 +124,9 @@ class FraudDetector:
         df = pd.get_dummies(df)
 
         missing_cols = [col for col in self.feature_cols if col not in df.columns]
-        for col in missing_cols:
-            df[col] = 0
+        if missing_cols:
+            missing_data = pd.DataFrame(0, index=df.index, columns=missing_cols)
+            df = pd.concat([df, missing_data], axis=1)
 
         df = df[self.feature_cols].copy()
         bool_cols = df.select_dtypes(include=['bool']).columns
@@ -135,7 +139,7 @@ class FraudDetector:
             df[col] = df[col].astype(float)
 
         df[numeric_cols] = self.scaler.transform(df[numeric_cols])
--
+
         xgb_pred = self.xgb_model.predict_proba(df)[0][1]
 
         lstm_input = np.tile(df.values, (10, 1)).reshape((1, 10, df.shape[1]))

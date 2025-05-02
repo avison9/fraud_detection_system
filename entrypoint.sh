@@ -13,14 +13,18 @@ source /app/venv/bin/activate
 sleep 70
 
 echo "Running producer script..."
-python data/initial_producer.py 
+python data/producer.py 
 
 echo "Running consumer script..."
-python data/initial_consumer.py
+python data/consumer.py
 
+echo "Running postgres database schema"
+python database/run_schema.py
 
 echo "Running fraud detection script..."
 python fraud_detector/fraud_producer.py &
+
+python fraud_detector/fraud_consumer.py &
 
 python fraud_detector/compro.py
 
