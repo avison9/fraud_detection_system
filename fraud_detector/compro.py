@@ -9,12 +9,15 @@ from fraud_model import FraudDetector
 from datetime import datetime
 from data.load_training_data import create_offset, load_dataset
 import threading
+import warnings
 
+warnings.filterwarnings('always', category=UserWarning, message=".*compiled the loaded model.*")
 
 KAFKA_BROKER = ['broker1:29092','broker2:29093','broker3:29094']
 TOPIC_IN = 'live_transactions'
 TOPIC_FRAUD = 'fraud'
 TOPIC_LEGIT = 'legit'
+TRAINING_TOPIC = 'training_transactions'
 CHUNK = 500
 BASE = Path(__file__).resolve().parent.parent 
 TRAINING_DIR = BASE / "data" / "training_data"
@@ -24,7 +27,7 @@ consumer = KafkaConsumer(
     bootstrap_servers=KAFKA_BROKER,
     value_deserializer=lambda m: json.loads(m.decode('utf-8')),
     auto_offset_reset='earliest',
-    enable_auto_commit=True,
+    enable_auto_commit=False,
     group_id='fraud_detector_group',
     max_poll_records=50,  
     heartbeat_interval_ms=3000,
@@ -48,6 +51,8 @@ def process_transaction(message):
         transaction['is_fraud'] = prediction
         producer.send(target_topic, value=transaction)
         print(f"[{datetime.now()}] Sent transaction to {target_topic}")
+        producer.send(TRAINING_TOPIC, transaction)
+        print(f"[{datetime.now()}] Sent transaction to {TRAINING_TOPIC} for model training")
     except Exception as e:
         print(f"Prediction error: {e}")
 
@@ -105,6 +110,7 @@ try:
         for tp, messages in raw_messages.items():
             for message in messages:
                 process_transaction(message)
+        consumer.commit()
 
         time.sleep(1)
 except KeyboardInterrupt:
@@ -112,4 +118,3 @@ except KeyboardInterrupt:
 finally:
     consumer.close()
     producer.close()
-

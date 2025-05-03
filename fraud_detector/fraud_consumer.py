@@ -4,6 +4,11 @@ import threading
 import pandas as pd
 from kafka import KafkaConsumer
 from database.db_connection import DatabaseConnection
+from util.logger_conf import ConsumerLogger
+from util.rebalancer import RebalanceListener
+import os
+
+logger = ConsumerLogger(os.path.basename(__file__)).get_logger()
 
 KAFKA_BROKER = ['broker1:29092','broker2:29093','broker3:29094']
 
@@ -74,8 +79,8 @@ def insert_into_mongodb(data):
 
 
 def consume_postgres(topics):
+    buffer = []
     consumer = KafkaConsumer(
-        *topics,
         bootstrap_servers=KAFKA_BROKER,
         group_id='postgres_group',
         value_deserializer=lambda m: json.loads(m.decode('utf-8')),
@@ -86,20 +91,44 @@ def consume_postgres(topics):
         session_timeout_ms=10000
     )
 
+    listener = RebalanceListener(consumer, buffer, insert_into_postgres)
+    consumer.subscribe(topics, listener=listener)
+
     print(f"[PostgreSQL Consumer] Listening to topics: {topics}")
 
-    for message in consumer:
-        try:
-            data = message.value
-            insert_into_postgres(data)
-            print(f"[PostgreSQL Consumer] Inserted: {data['transaction_id']}")
-        except Exception as e:
-            print(f"[PostgreSQL Consumer] Error: {e}")
+    try:
+        logger.info("Consumer starting to consume data")
+        while True:
+            try:
+                messages = consumer.poll(timeout_ms=1000)
+                if not messages:
+                    print('[PostgreSQL] No new message in Topic')
+                    continue
+                for topic_partition, records in messages.items():
+                    if not records:
+                        print('[PostgrSQL] No new message in Partition')
+                        continue
+                    for record in records:
+                        try:
+                            insert_into_postgres(record.value)
+                            buffer.append(record.value)
+                            listener.update_last_used()
+                        except Exception as e:
+                            print(f"[PostgreSQL Consumer] Error: {e}")
+                consumer.commit()
+            except Exception as e:
+                logger.error(f"Error during polling or processing: {e}", exc_info=True)
+    except KeyboardInterrupt:
+        logger.info("Consumer interrupted by user")
+    finally:
+        consumer.close()
+        listener.stop()
+        logger.info("Kafka consumer closed")
 
 
 def consume_mongo(topics):
+    buffer = []
     consumer = KafkaConsumer(
-        *topics,
         bootstrap_servers=KAFKA_BROKER,
         group_id='mongo_group',
         value_deserializer=lambda m: json.loads(m.decode('utf-8')),
@@ -112,13 +141,37 @@ def consume_mongo(topics):
 
     print(f"[MongoDB Consumer] Listening to topics: {topics}")
 
-    for message in consumer:
-        try:
-            data = message.value
-            insert_into_mongodb(data)
-            print(f"[MongoDB Consumer] Inserted: {data['transaction_id']}")
-        except Exception as e:
-            print(f"[MongoDB Consumer] Error: {e}")
+    listener = RebalanceListener(consumer, buffer, insert_into_mongodb)
+    consumer.subscribe(topics, listener=listener)
+
+    try:
+        logger.info("Consumer starting to consume data")
+        while True:
+            try:
+                messages = consumer.poll(timeout_ms=1000)
+                if not messages:
+                    print('[MongoDB] No new message in Topic')
+                    continue
+                for topic_partition, records in messages.items():
+                    if not records:
+                        print('[MongoDB] No new message in Partition')
+                        continue
+                    for record in records:
+                        try:
+                            insert_into_mongodb(record.value)
+                            buffer.append(record.value)
+                            listener.update_last_used()
+                        except Exception as e:
+                            print(f"[MongoBD Consumer] Error: {e}")
+                consumer.commit()
+            except Exception as e:
+                logger.error(f"Error during polling or processing: {e}", exc_info=True)
+    except KeyboardInterrupt:
+        logger.info("Consumer interrupted by user")
+    finally:
+        consumer.close()
+        listener.stop()
+        logger.info("Kafka consumer closed")
 
 
 
@@ -129,5 +182,6 @@ if __name__ == '__main__':
     t2.start()
     t1.join()
     t2.join()
+
 
 
