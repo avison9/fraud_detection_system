@@ -25,11 +25,19 @@ COPY fraud_detector/ ./fraud_detector/
 
 COPY data/ ./data/
 
+COPY database/ ./database/
+
 COPY entrypoint.sh/ ./entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh
 
+COPY util/ ./util/
+
+RUN chmod +x /app/util/validate_topic.sh
+
 ENV PYTHONPATH="/app"
 
 
+
 CMD ["/app/entrypoint.sh"]
+

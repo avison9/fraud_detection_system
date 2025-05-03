@@ -75,7 +75,7 @@ class DatabaseConnection:
         try:
             self.pg_cursor.execute(query, values)
             self.pg_conn.commit()
-            print("[PostgreSQL] Insert successful.")
+            print(f"[PostgreSQL] Inserted data: {values[0]} successfully into transactions table.")
         except Exception as e:
             self.pg_conn.rollback()
             print(f"[PostgreSQL] Insert failed: {e}")
@@ -87,14 +87,14 @@ class DatabaseConnection:
             try:
                 collection = self.get_mongo_collection(collection_name)
                 result = collection.insert_one(document)
-                print(f"[MongoDB] Inserted document ID: {result.inserted_id} for training...")
+                print(f"[MongoDB] Inserted document successfully for initial training...")
             except Exception as e:
                 print(f"[MongoDB] Insert failed: {e}")
         else:
             try:
                 collection = self.get_mongo_collection(collection_name)
                 result = collection.insert_one(document)
-                print(f"[MongoDB] Inserted document ID: {result.inserted_id}")
+                print(f"[MongoDB] Inserted document sucessfully for subsequent training")
             except Exception as e:
                 print(f"[MongoDB] Insert failed: {e}")
 

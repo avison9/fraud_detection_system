@@ -37,6 +37,12 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker1:29092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   broker2:
     image: confluentinc/cp-kafka:7.5.0
     container_name: broker2
@@ -58,6 +64,12 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker2:29093", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   broker3:
     image: confluentinc/cp-kafka:7.5.0
     container_name: broker3
@@ -78,6 +90,12 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://broker3:29094,EXTERNAL://0.0.0.0:9094
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker3:29094", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafdrop:
     image: obsidiandynamics/kafdrop
@@ -113,7 +131,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: dev1
+      POSTGRES_DB: dev
   
   fraud_detector:
     build:
@@ -126,6 +144,9 @@ services:
       - broker1
       - broker2
       - broker3
+      - postgres
       - mongodb
 
+    environment:
+      BOOTSTRAP_SERVERS: broker1:29092,broker2:29093,broker3:29094
 
