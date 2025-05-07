@@ -6,9 +6,9 @@ import time
 from datetime import datetime, timedelta
 import signal
 from data.wallet import CryptoWallet
+from util.params import *
 
-KAFKA_TOPIC = "live_transactions"
-KAFKA_BROKER = ["broker1:29092","broker2:29093","broker3:39094"]
+KAFKA_TOPIC = TOPIC_IN
 RUNNING = True
 START_DATE, END_DATE = "2022-01-01 00:00:00", "2025-01-01 00:00:00"
 
@@ -66,13 +66,14 @@ def generate_transaction():
 print("[INFO] Kafka producer started. Press Ctrl+C to exit.")
 
 try:
+    count = 0
     while RUNNING:
         txn = generate_transaction()
         future = producer.send(KAFKA_TOPIC, value=txn)
-
+        print(f'live transaction {count} sent to {KAFKA_TOPIC} topic')
         future.add_callback(lambda metadata: print(f"[INFO] Sent to {metadata.topic} [{metadata.partition()}]"))
         future.add_errback(lambda exc: print(f"[ERROR] Failed to send message: {exc}"))
-
+        count += 1
         time.sleep(1)
 
 except Exception as e:
@@ -83,4 +84,5 @@ finally:
     producer.flush()
     producer.close()
     print("[INFO] Kafka producer exited cleanly.")
+
 

@@ -3,15 +3,12 @@ from pymongo import MongoClient
 from datetime import datetime
 import os
 from pathlib import Path
+from util.params import *
 
-mongo_host = "mongodb"
-mongo_port = 27017
-mongo_password = "password"
-mongo_user = "root"
-mongo_db_name = "transactions"
-mongo_collection_name = "raw_trx"
 
-mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
+mongo_db_name = MONGO_DB_CONFIG['database']
+mongo_collection_name = MONGO_DB_CONFIG['collection']
+
 
 skip_file = "data/skip_offset.txt"
 
@@ -35,7 +32,7 @@ def load_dataset(skip, chunk_size):
 
     create_offset()
 
-    client = MongoClient(mongo_uri)
+    client = MongoClient(MONGO_URI)
     db = client[mongo_db_name]
     collection = db[mongo_collection_name]
 
@@ -57,3 +54,9 @@ def load_dataset(skip, chunk_size):
         print(f"[{datetime.now()}] No more data to fetch.")
 
     update_offset(skip, chunk_size)
+
+
+
+
+
+

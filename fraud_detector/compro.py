@@ -10,14 +10,10 @@ from datetime import datetime
 from data.load_training_data import create_offset, load_dataset
 import threading
 import warnings
+from util.params import *
 
 warnings.filterwarnings('always', category=UserWarning, message=".*compiled the loaded model.*")
 
-KAFKA_BROKER = ['broker1:29092','broker2:29093','broker3:29094']
-TOPIC_IN = 'live_transactions'
-TOPIC_FRAUD = 'fraud'
-TOPIC_LEGIT = 'legit'
-TRAINING_TOPIC = 'training_transactions'
 CHUNK = 500
 BASE = Path(__file__).resolve().parent.parent 
 TRAINING_DIR = BASE / "data" / "training_data"
@@ -51,8 +47,8 @@ def process_transaction(message):
         transaction['is_fraud'] = prediction
         producer.send(target_topic, value=transaction)
         print(f"[{datetime.now()}] Sent transaction to {target_topic}")
-        producer.send(TRAINING_TOPIC, transaction)
-        print(f"[{datetime.now()}] Sent transaction to {TRAINING_TOPIC} for model training")
+        producer.send(TRAINING_TOPIC[0], transaction)
+        print(f"[{datetime.now()}] Sent transaction to {TRAINING_TOPIC[0]} for model training")
     except Exception as e:
         print(f"Prediction error: {e}")
 
@@ -118,3 +114,5 @@ except KeyboardInterrupt:
 finally:
     consumer.close()
     producer.close()
+
+

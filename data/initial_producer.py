@@ -5,9 +5,9 @@ import uuid
 import time
 from datetime import datetime, timedelta
 from wallet import CryptoWallet
+from util.params import *
 
-KAFKA_TOPIC = "training_transactions"
-KAFKA_BROKER = ["broker1:29092", "broker2:29093", "broker3:29094"]
+KAFKA_TOPIC = ''.join(TRAINING_TOPIC)
 
 # Create Kafka producer
 producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER,
@@ -72,4 +72,5 @@ for data in generate_initial_transactions():
     producer.send(KAFKA_TOPIC, data)
     print(f"Sent transaction: {data}")
     time.sleep(0.2)   
+
 

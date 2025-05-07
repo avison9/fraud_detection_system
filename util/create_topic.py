@@ -1,6 +1,7 @@
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import TopicAlreadyExistsError
 from kafka.errors import KafkaError
+from params import *
 
 def create_kafka_topics(bootstrap_servers, topic_list):
     admin_client = KafkaAdminClient(
@@ -32,7 +33,6 @@ def create_kafka_topics(bootstrap_servers, topic_list):
 
 if __name__ == '__main__':
     print("Creating Topics......")
-    bootstrap_servers = ['broker1:29092','broker2:29093','broker3:29094',]
     topics_to_create = [
         {'name': 'live_transactions', 'num_partitions': 7, 'replication_factor': 3},
         {'name': 'training_transactions', 'num_partitions': 5, 'replication_factor': 3},
@@ -41,5 +41,7 @@ if __name__ == '__main__':
         {'name': 'alert', 'num_partitions': 4, 'replication_factor': 2}
     ]
 
-    create_kafka_topics(bootstrap_servers, topics_to_create)
+    create_kafka_topics(KAFKA_BROKER, topics_to_create)
+
+
 

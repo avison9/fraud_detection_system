@@ -2,20 +2,14 @@ import json
 from kafka import KafkaConsumer
 from datetime import datetime, timedelta
 from database.db_connection import DatabaseConnection
-
-# MongoDB connection details
-mongo_host = "mongodb"
-mongo_port = 27017
-mongo_password = "password"
-mongo_user = "root"
-mongo_db_name = "transactions"
-mongo_collection_name = "raw_trx"
+from util.params import *
 
 # Kafka Consumer Configuration
-kafka_brokers = ['broker1:29092', 'broker2:29093', 'broker3:29094']
-kafka_topic = 'training_transactions'
+kafka_brokers = KAFKA_BROKER
+kafka_topic = ''.join(TRAINING_TOPIC)
 
-MONGO_URI = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
+mongo_db_name = MONGO_DB_CONFIG['database']
+mongo_collection_name = MONGO_DB_CONFIG['collection']
 
 
 db = DatabaseConnection(None,MONGO_URI, mongo_db_name)
@@ -81,3 +75,5 @@ except KeyboardInterrupt:
 finally:
     consumer.close()
     print("Kafka consumer closed.")
+
+

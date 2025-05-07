@@ -7,31 +7,12 @@ from database.db_connection import DatabaseConnection
 from util.logger_conf import ConsumerLogger
 from util.rebalancer import RebalanceListener
 import os
+from util.params import *
 
 logger = ConsumerLogger(os.path.basename(__file__)).get_logger()
 
-KAFKA_BROKER = ['broker1:29092','broker2:29093','broker3:29094']
-
-POSTGRES_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'dbname': 'dev',
-    'user': 'root',
-    'password': 'password'
-}
-
-mongo_host = "mongodb"
-mongo_port = 27017
-mongo_password = "password"
-mongo_user = "root"
-
-MONGO_URI = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
-MONGO_DB = "transactions"
-MONGO_COLLECTION = "raw_trx"
-
-
-TOPIC_A = ['fraud', 'legit'] 
-TOPIC_B = ['training_transactions']  
+MONGO_DB = MONGO_DB_CONFIG['database']
+MONGO_COLLECTION = MONGO_DB_CONFIG['collection']
 
 db = DatabaseConnection(POSTGRES_CONFIG, MONGO_URI, MONGO_DB)
 
@@ -102,11 +83,10 @@ def consume_postgres(topics):
             try:
                 messages = consumer.poll(timeout_ms=1000)
                 if not messages:
-                    print('[PostgreSQL] No new message in Topic')
                     continue
                 for topic_partition, records in messages.items():
                     if not records:
-                        print('[PostgrSQL] No new message in Partition')
+                        print('[PostgrSQL] No new message in Topic {topic_partition.topic} Partition {topic_partition.partition}')
                         continue
                     for record in records:
                         try:
@@ -150,11 +130,10 @@ def consume_mongo(topics):
             try:
                 messages = consumer.poll(timeout_ms=1000)
                 if not messages:
-                    print('[MongoDB] No new message in Topic')
                     continue
                 for topic_partition, records in messages.items():
                     if not records:
-                        print('[MongoDB] No new message in Partition')
+                        print('[MongoDB] No new message in Topic {topic_partition.topic} Partition {topic_partition.partition}')
                         continue
                     for record in records:
                         try:
@@ -176,12 +155,13 @@ def consume_mongo(topics):
 
 
 if __name__ == '__main__':
-    t1 = threading.Thread(target=consume_postgres, args=(TOPIC_A,))
-    t2 = threading.Thread(target=consume_mongo, args=(TOPIC_B,))
+    t1 = threading.Thread(target=consume_postgres, args=(PREDICTION_TOPIC,))
+    t2 = threading.Thread(target=consume_mongo, args=(TRAINING_TOPIC,))
     t1.start()
     t2.start()
     t1.join()
     t2.join()
+
 
 
 
