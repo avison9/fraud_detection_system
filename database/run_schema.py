@@ -1,5 +1,6 @@
 from db_connection import DatabaseConnection
 import os
+from util.params import *
 
 script_dir = os.path.dirname(__file__)
 schema_path = os.path.join(script_dir, 'schema.sql')
@@ -30,13 +31,5 @@ def execute_sql_file(sql_file_path, db_config):
             db.close_postgres()
 
 
-db_config = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'dev',
-    'user': 'root',
-    'password': 'password'
-}
+execute_sql_file(schema_path, POSTGRES_CONFIG)
 
-
-execute_sql_file(schema_path, db_config)
