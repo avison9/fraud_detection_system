@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h2>WebSocket Test</h2>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <pre id="output"></pre>
+
+    <script>
+
+        function connect() {
+            socket = new WebSocket("ws://localhost:8000/ws");
+
+            socket.onopen = () => {
+                log("WebSocket connected");
+            };
+
+            socket.onmessage = (event) => {
+                log("Received: " + event.data);
+            };
+
+            socket.onerror = (error) => {
+                log("Error: " + error.message);
+            };
+
+            socket.onclose = () => {
+                log("WebSocket closed");
+            };
+        }
+
+        function sendMessage() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send("Hello from browser!");
+                log("Sent message");
+            } else {
+                log("WebSocket not connected");
+            }
+        }
+
+        function log(message) {
+            document.getElementById("output").textContent += message + "\n";
+        }
+    </script>
+</body>
+</html>
+
+
+
+
