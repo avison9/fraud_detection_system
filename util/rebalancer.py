@@ -1,4 +1,7 @@
-from util.logger_conf import ConsumerLogger
+try:
+    from logger_conf import ConsumerLogger
+except ImportError:
+    from util.logger_conf import ConsumerLogger
 from kafka.consumer.subscription_state import ConsumerRebalanceListener
 import threading
 import time
@@ -56,3 +59,4 @@ class RebalanceListener(ConsumerRebalanceListener):
 
     def stop(self):
         self.running = False
+
