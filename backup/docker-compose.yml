@@ -1,0 +1,206 @@
+version: '3.8'
+
+networks:
+  kafka-net:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-net
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: broker1
+    ports:
+      - "9092:9092"
+    networks:
+      - kafka-net
+    volumes:
+      - ./broker1_data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://broker1:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker1:29092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  broker2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: broker2
+    ports:
+      - "9093:9093"
+    networks:
+      - kafka-net
+    volumes:
+      - ./broker2_data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29093,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://broker2:29093,EXTERNAL://0.0.0.0:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker2:29093", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  broker3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: broker3
+    ports:
+      - "9094:9094"
+    networks:
+      - kafka-net
+    volumes:
+      - ./broker3_data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+    #entrypoint: ["/bin/bash", "-c", "chown -R appuser:appuser /var/lib/kafka/data && /etc/confluent/docker/run"]
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker3:29094,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://broker3:29094,EXTERNAL://0.0.0.0:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker3:29094", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    networks:
+      - kafka-net
+    depends_on:
+      - broker1
+    environment:
+      KAFKA_BROKERCONNECT: broker1:29092,broker2:29093,broker3:29094
+      JVM_OPTS: "-Xms32M -Xmx64M"
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - kafka-net
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - kafka-net
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev
+  
+  fraud_detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraud_detector
+    networks:
+      - kafka-net
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+      - postgres
+      - mongodb
+
+    environment:
+      BOOTSTRAP_SERVERS: broker1:29092,broker2:29093,broker3:29094
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - kafka-net
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit/Dockerfile.streamlit
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    networks:
+      - kafka-net
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+      - redis
+      - postgres
+      - mongodb
+    environment:
+      STREAMLIT_SERVER_PORT: 8501
+
+  dash:
+    build:
+      context: .
+      dockerfile: dash/Dockerfile.dash
+    container_name: dash
+    ports:
+      - "8050:8050"
+    depends_on:
+      - redis
+    networks:
+      - kafka-net
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: fast-api/Dockerfile.api  
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    networks:
+      - kafka-net
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+      - redis
+

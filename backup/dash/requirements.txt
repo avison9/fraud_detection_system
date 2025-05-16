@@ -1,0 +1,6 @@
+websockets
+dash
+plotly
+redis
+pandas
+
