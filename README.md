@@ -92,35 +92,27 @@ The system includes a flexible, automated **model retraining** capability:
 - Python 3.8+ (for running or modifying services locally if needed)
 
 ### Clone the Repository
-bash
-   git clone https://github.com/avison9/fraud_detection_system/
-   cd fraud_detection_system
+- git clone https://github.com/avison9/fraud_detection_system/
+- cd fraud_detection_system
 
 
-Start Services
-bash
-   docker-compose up --build
+### Start Services
+- docker-compose up --build
 
 ### Stop Sevices
-
-bash
-   docker-compose down
+- docker-compose down
 
 ### Access Services
 
 #### Streamlit DashBoard
-- Streamlit Dashboard can be visualise from 
-bash 
-   http://localhost:8501
+- Streamlit Dashboard can be visualise from  http://localhost:8501
 
 #### Dash Dashboard
-- Dash Dashboard can be visualised from 
-bash 
-   http://localhost:8050
+- Dash Dashboard can be visualised from   http://localhost:8050
 ![Dash Dashboard](images/dash.png)
 
 #### Kafdrop UI
-- Kafka Drop UI can be visualised from '''bash http://localhost:9000
+- Kafka Drop UI can be visualised from  http://localhost:9000
 ![Dash Dashboard](images/kafka.png)
 
 #### WebSocker Viewer
@@ -128,12 +120,12 @@ bash
 ![WebSocket Viewer](images/websocket.png)
 
 #### PostgreSQL Access
-- The postgres database can be access by running '''bash docker exec -it postgres psql -U root -d dev
+- The postgres database can be access by running  docker exec -it postgres psql -U root -d dev
 - SQL queries can be run from the following prompt
 ![PostgreSQL Prompt](images/postgres.png)
 
 #### MongoDB Access
-- The MongoDB database can be access by running '''bash docker exec -it mongodb mongosh -u root -p password
+- The MongoDB database can be access by running  docker exec -it mongodb mongosh -u root -p password
 - Mongo commands can be run from the following prompt
 ![MongoDB Prompt](images/mongodb.png)
 
