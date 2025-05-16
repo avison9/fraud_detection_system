@@ -95,7 +95,7 @@ The system includes a flexible, automated **model retraining** capability:
 
 ```bash
 git clone https://github.com/avison9/fraud_detection_system/
-cd fraud_detection_system
+cd fraud_detection_system```
 
 ### Start Services 
 
