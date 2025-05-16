@@ -92,28 +92,31 @@ The system includes a flexible, automated **model retraining** capability:
 - Python 3.8+ (for running or modifying services locally if needed)
 
 ### Clone the Repository
+bash
+   git clone https://github.com/avison9/fraud_detection_system/
+   cd fraud_detection_system
 
-```bash
-git clone https://github.com/avison9/fraud_detection_system/
-cd fraud_detection_system```
 
-### Start Services 
-
-'''bash
-docker-compose up --build
+Start Services
+bash
+   docker-compose up --build
 
 ### Stop Sevices
 
-'''bash
-docker-compose down
+bash
+   docker-compose down
 
 ### Access Services
 
 #### Streamlit DashBoard
-- Streamlit Dashboard can be visualise from '''bash http://localhost:8501
+- Streamlit Dashboard can be visualise from 
+bash 
+   http://localhost:8501
 
 #### Dash Dashboard
-- Dash Dashboard can be visualised from '''bash http://localhost:8050
+- Dash Dashboard can be visualised from 
+bash 
+   http://localhost:8050
 ![Dash Dashboard](images/dash.png)
 
 #### Kafdrop UI
@@ -137,5 +140,6 @@ docker-compose down
 
 #### Model Training
 ![Model Training](images/model.png)
+
 
 
