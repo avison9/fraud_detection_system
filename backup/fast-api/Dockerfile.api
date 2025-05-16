@@ -1,0 +1,45 @@
+FROM python:3.9-slim
+
+# Set environment variables to prevent .pyc files and ensure stdout is unbuffered
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies (optional but often needed for SSL, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --upgrade pip && pip install virtualenv
+
+RUN python -m venv /api-app/venv
+
+
+WORKDIR /api-app
+
+
+COPY fast-api/requirements.txt /api-app/requirements.txt
+
+RUN /api-app/venv/bin/python -m pip install --upgrade pip && /api-app/venv/bin/pip install -r /api-app/requirements.txt
+
+RUN /api-app/venv/bin/pip list
+
+COPY fast-api/web_server.py /api-app/web_server.py
+
+COPY fast-api/__init__.py /api-app/__init__.py
+
+COPY util/params.py  /api-app/params.py
+
+COPY util/rebalancer.py /api-app/rebalancer.py
+
+COPY util/logger_conf.py /api-app/logger_conf.py
+
+
+#ENV PYTHONPATH="/api-app"
+
+EXPOSE 8000
+
+CMD ["/api-app/venv/bin/uvicorn", "web_server:app", "--host", "0.0.0.0", "--port", "8000"]
+
+#CMD ["../venv/bin/uvicorn","web_server:app", "--host", "0.0.0.0", "--port", "8000"]

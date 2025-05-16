@@ -1,0 +1,122 @@
+import streamlit as st
+import asyncio
+import websockets
+import json
+import pandas as pd
+import redis
+import plotly.express as px
+from collections import deque
+import threading
+import time
+import queue
+
+
+st.set_page_config(page_title="Fraud Detection Dashboard", layout="wide")
+st.title("Real-Time Fraud Detection Dashboard")
+
+
+redis_client = redis.Redis(host="redis", port=6379, db=0)
+
+
+MAX_TX = 500
+live_data_queue = queue.Queue()
+live_data_buffer = deque(maxlen=MAX_TX)
+
+# Init state
+if "tx_limit" not in st.session_state:
+    st.session_state.tx_limit = 100
+if "ws_started" not in st.session_state:
+    st.session_state.ws_started = False
+
+# Sidebar
+st.sidebar.header("Display Settings")
+st.session_state.tx_limit = st.sidebar.selectbox(
+    "Show last N transactions", options=[10, 50, 100, 500], index=2
+)
+
+st.sidebar.header("Filters")
+fraud_only = st.sidebar.checkbox("Show Only Fraudulent", value=False)
+min_amount = st.sidebar.slider("Minimum Amount", 0, 100, 1)
+wallet_filter = st.sidebar.text_input("Filter by Wallet Address")
+
+# WebSocket Listener
+def websocket_listener():
+    async def listen():
+        uri = "ws://fastapi:8000/ws"
+        while True:
+            try:
+                async with websockets.connect(uri) as websocket:
+                    while True:
+                        msg = await websocket.recv()
+                        try:
+                            data = json.loads(msg)
+                            live_data_queue.put(data)
+                        except json.JSONDecodeError as e:
+                            print(f"[Parse Error] {e}")
+            except Exception as e:
+                print(f"[WebSocket Error] {e}")
+                await asyncio.sleep(5)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(listen())
+
+# Start listener once
+if not st.session_state.ws_started:
+    threading.Thread(target=websocket_listener, daemon=True).start()
+    st.session_state.ws_started = True
+
+# Drain live queue
+while not live_data_queue.empty():
+    try:
+        tx = live_data_queue.get_nowait()
+        live_data_buffer.append(tx)
+    except queue.Empty:
+        break
+
+# Fallback from Redis
+def get_cached_transactions(limit):
+    raw = redis_client.lrange("tx_cache", 0, limit - 1)
+    return [json.loads(r) for r in raw]
+
+# Use live buffer or fallback
+data_source = (
+    list(live_data_buffer)[-st.session_state.tx_limit:]
+    if live_data_buffer else get_cached_transactions(st.session_state.tx_limit)
+)
+
+# Filter
+filtered = []
+for tx in data_source:
+    if fraud_only and not tx.get("is_fraud", 0):
+        continue
+    if tx.get("amount", 0) < min_amount:
+        continue
+    if wallet_filter and wallet_filter not in (tx.get("sender_wallet", "") + tx.get("receiver_wallet", "")):
+        continue
+    filtered.append(tx)
+
+# Show Data
+df = pd.DataFrame(filtered)
+st.write(f"Showing {len(df)} of {len(data_source)} transactions")
+
+if not df.empty:
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["is_fraud"] = df["is_fraud"].astype(bool)
+
+    st.subheader("Transactions Table")
+    st.dataframe(df[
+        ['timestamp', 'sender_wallet', 'receiver_wallet', 'amount', 'currency', 'location', 'device_type', 'is_fraud']
+    ], use_container_width=True)
+
+    st.subheader("Fraud Count")
+    st.metric("Fraudulent Transactions", df["is_fraud"].sum())
+
+    st.subheader("Transaction Histogram")
+    fig = px.histogram(df, x="timestamp", color="is_fraud", nbins=20)
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("No transactions match the selected filters.")
+
+st.rerun()
+
